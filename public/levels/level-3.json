@@ -1,0 +1,11 @@
+{
+  "start": [
+    { "row": 3, "col": 0, "color": "red", "direction": "right" }
+  ],
+  "end": [
+    { "row": 3, "col": 6, "color": "red", "direction": "left" }
+  ],
+  "boulders": [
+    { "row": 3, "col": 3 }
+  ]
+}
