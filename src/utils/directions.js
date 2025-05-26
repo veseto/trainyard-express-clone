@@ -57,6 +57,18 @@ export const getOutgoingDirection = (trackType, incoming) => {
       left: "right",
       right: "left",
     },
+    "senw": {
+      up: "left",
+      down: "right",
+      left: "up",
+      right: "down",
+    },
+    "swne": {
+      up: "right",
+      down: "left",
+      left: "down",
+      right: "up",
+    },
   };
 
   return map[trackType]?.[incoming] || null;

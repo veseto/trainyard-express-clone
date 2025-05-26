@@ -57,7 +57,9 @@ const getCellSymbol = (cell, trains, row, col) => {
       "curve-nw": "╝",
       "curve-sw": "╗",
       "curve-se": "╔",
-      "intersection": "╬" // visually distinct symbol for intersections
+      "intersection": "╬",
+      "senw": "╝╔",
+      "swne": "╗╚"
     };
     return symbolMap[cell.trackType] || "";
   }

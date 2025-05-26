@@ -153,7 +153,9 @@ const TrainyardGame = () => {
         "curve-sw": "curve-nw",
         "curve-nw": "curve-ne",
         "curve-ne": "intersection",
-        "intersection": "straight-horizontal"
+        "intersection": "senw",
+        "senw" : "swne", 
+        "swne" : "straight-horizontal"
       };
       const nextType = rotationMap[current.trackType] || "straight-horizontal";
       newGrid[row][col] = { ...current, trackType: nextType };
