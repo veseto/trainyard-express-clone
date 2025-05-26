@@ -13,6 +13,8 @@ const colorClasses = {
   green: "text-green-500",
   yellow: "text-yellow-500",
   purple: "text-purple-500",
+  orange: "text-orange-500",
+  brown: "text-amber-900"
 };
 
 const getCellSymbol = (cell, trains, row, col) => {
@@ -38,9 +40,7 @@ const getCellSymbol = (cell, trains, row, col) => {
     return (
       <span>
         {directions.map((dir, i) => (
-          <span key={dir + i}>
-            {directionSymbols[dir]}
-          </span>
+          <span key={dir + i}>{directionSymbols[dir]}</span>
         ))}
         {colors.map((clr, i) => (
           <span key={clr + i} className={colorClasses[clr] || ""}>*</span>
@@ -57,6 +57,7 @@ const getCellSymbol = (cell, trains, row, col) => {
       "curve-nw": "╝",
       "curve-sw": "╗",
       "curve-se": "╔",
+      "intersection": "╬" // visually distinct symbol for intersections
     };
     return symbolMap[cell.trackType] || "";
   }

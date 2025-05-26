@@ -33,10 +33,15 @@ const TrainyardGame = () => {
         let anyFailed = false;
         let allArrived = true;
 
-        const updatedTrains = prevTrains.map(train => {
+        const trainMap = new Map();
+        const nextTrains = [];
+
+        // Move all trains and handle intersections
+        for (const train of prevTrains) {
           if (train.hasArrived || train.hasFailed) {
+            nextTrains.push(train);
             if (train.hasFailed) anyFailed = true;
-            return train;
+            continue;
           }
 
           let nextTrain = null;
@@ -51,8 +56,44 @@ const TrainyardGame = () => {
           if (nextTrain?.hasFailed) anyFailed = true;
           if (!nextTrain?.hasArrived && !nextTrain?.hasFailed) allArrived = false;
 
-          return nextTrain ?? train;
-        });
+          const key = `${nextTrain?.row},${nextTrain?.col}`;
+          if (trainMap.has(key)) {
+            const existing = trainMap.get(key);
+            trainMap.set(key, [...existing, nextTrain]);
+          } else {
+            trainMap.set(key, [nextTrain]);
+          }
+
+          nextTrains.push(nextTrain);
+        }
+
+        // Handle intersections where multiple trains meet
+        for (const [key, trainsAtCell] of trainMap.entries()) {
+          if (trainsAtCell.length > 1) {
+            const cell = grid[trainsAtCell[0].row][trainsAtCell[0].col];
+            if (cell?.type === "track" && cell.trackType === "intersection") {
+              const colorSet = new Set(trainsAtCell.map(t => t.color));
+              let newColor = "brown";
+              if (colorSet.size === 1) {
+                newColor = trainsAtCell[0].color;
+              } else if (colorSet.has("red") && colorSet.has("blue") && colorSet.size === 2) {
+                newColor = "purple";
+              } else if (colorSet.has("red") && colorSet.has("yellow") && colorSet.size === 2) {
+                newColor = "orange";
+              } else if (colorSet.has("yellow") && colorSet.has("blue") && colorSet.size === 2) {
+                newColor = "green";
+              }
+              // Apply the new color to all trains at this intersection
+              trainMap.set(key, trainsAtCell.map(t => ({ ...t, color: newColor })));
+            }
+          }
+        }
+
+        // Flatten updated train list
+        const flattened = [];
+        for (const trains of trainMap.values()) {
+          flattened.push(...trains);
+        }
 
         if (anyFailed) {
           setIsRunning(false);
@@ -62,7 +103,7 @@ const TrainyardGame = () => {
           setStatus("success");
         }
 
-        return updatedTrains;
+        return flattened;
       });
     }, 500);
     return () => clearInterval(interval);
@@ -111,7 +152,8 @@ const TrainyardGame = () => {
         "curve-se": "curve-sw",
         "curve-sw": "curve-nw",
         "curve-nw": "curve-ne",
-        "curve-ne": "straight-horizontal"
+        "curve-ne": "intersection",
+        "intersection": "straight-horizontal"
       };
       const nextType = rotationMap[current.trackType] || "straight-horizontal";
       newGrid[row][col] = { ...current, trackType: nextType };
