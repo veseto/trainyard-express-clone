@@ -52,3 +52,17 @@ export const getOutgoingDirection = (trackType, incoming, mainIsFirst = true) =>
 
   return baseMap[trackType]?.[incoming] || null;
 };
+const trackDirectionMap = {
+  "straight-horizontal": ["left", "right"],
+  "straight-vertical": ["up", "down"],
+  "ne": ["down", "left"],
+  "nw": ["down", "right"],
+  "se": ["up", "left"],
+  "sw": ["up", "right"],
+  // Add more as needed
+};
+
+export const getValidDirections = (trackType) => {
+  return trackDirectionMap[trackType] || [];
+};
+

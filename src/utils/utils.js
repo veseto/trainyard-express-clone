@@ -47,24 +47,42 @@ export const moveTrain = ({ train, grid, setTrain, setGrid }) => {
     const { trackType } = targetCell;
 
     if (trackType.includes("+")) {
-      const [first, second] = trackType.split("+");
-      const mainFirst = targetCell.mainIsFirst !== false;
+      const [trackA, trackB] = trackType.split("+");
+      const mainIsFirst = targetCell.mainIsFirst !== false;
+      const toggleState = targetCell._toggle !== false;
 
-      // Determine direction from current toggle state
-      const useFirst = targetCell._toggle !== false; // default true
-      const currentType = useFirst
-        ? (mainFirst ? first : second)
-        : (mainFirst ? second : first);
+      const mainTrack = toggleState ? (mainIsFirst ? trackA : trackB)
+                                    : (mainIsFirst ? trackB : trackA);
+      const altTrack  = toggleState ? (mainIsFirst ? trackB : trackA)
+                                    : (mainIsFirst ? trackA : trackB);
 
-      const outgoing = getOutgoingDirection(currentType, incoming);
+      const mainSupports = getOutgoingDirection(mainTrack, incoming);
+      const altSupports  = getOutgoingDirection(altTrack, incoming);
+
+      let outgoing = null;
+      let usedTrack = null;
+
+      if (mainSupports && altSupports) {
+        // Both paths support entry — choose based on toggle
+        outgoing = getOutgoingDirection(mainTrack, incoming);
+        usedTrack = mainTrack;
+      } else if (mainSupports) {
+        outgoing = mainSupports;
+        usedTrack = mainTrack;
+      } else if (altSupports) {
+        outgoing = altSupports;
+        usedTrack = altTrack;
+      }
 
       if (outgoing) {
-        // Clone grid to trigger re-render
         const newGrid = grid.map(row => row.map(cell => ({ ...cell })));
 
-        // Toggle state and update visual flag
-        newGrid[nextRow][nextCol]._toggle = !useFirst;
-        newGrid[nextRow][nextCol].mainIsFirst = !useFirst;
+        // Only toggle if both tracks support the same entrance
+        const shouldToggle = mainSupports && altSupports;
+
+        if (shouldToggle) {
+          newGrid[nextRow][nextCol]._toggle = !toggleState;
+        }
 
         setGrid(newGrid);
         setTrain({ ...train, row: nextRow, col: nextCol, direction: outgoing });
@@ -81,4 +99,3 @@ export const moveTrain = ({ train, grid, setTrain, setGrid }) => {
 
   setTrain({ ...train, hasFailed: true });
 };
-

@@ -56,20 +56,26 @@ const getCellSymbol = (cell, trains, row, col) => {
     );
   } else if (cell.type === "track") {
     if (cell.trackType.includes("+")) {
-      // Dual path
-      const [main, secondary] = cell.trackType.split("+");
-      const mainIsFirst = cell.mainIsFirst !== false; // default true
-      // Show main symbol darker, secondary lighter grey
-      cellContent = (
-        <span className="flex space-x-0.5 select-none">
-          <span className={mainIsFirst ? "" : colorClasses.grey}>{simpleSymbolMap[main]}</span>
-          <span className={mainIsFirst ? colorClasses.grey : ""}>{simpleSymbolMap[secondary]}</span>
-        </span>
-      );
-    } else {
-      // Single path
-      cellContent = simpleSymbolMap[cell.trackType] || "";
-    }
+  const [first, second] = cell.trackType.split("+");
+  const mainIsFirst = cell.mainIsFirst !== false; // default true
+  const toggle = cell._toggle !== false; // default true
+
+  // Determine which track is main based on toggle and mainIsFirst
+  // But do NOT swap symbol order, just style
+  const firstIsMain = toggle ? mainIsFirst : !mainIsFirst;
+  const secondIsMain = !firstIsMain;
+
+  cellContent = (
+    <span className="flex space-x-0.5 select-none">
+      <span className={firstIsMain ? "" : colorClasses.grey}>{simpleSymbolMap[first]}</span>
+      <span className={secondIsMain ? "" : colorClasses.grey}>{simpleSymbolMap[second]}</span>
+    </span>
+  );
+} else {
+  // Single path
+  cellContent = simpleSymbolMap[cell.trackType] || "";
+}
+
   }
 
   return (
