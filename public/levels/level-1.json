@@ -1,8 +1,8 @@
 {
   "start": [
-    { "row": 3, "col": 1, "color": ["green", "green"], "direction": "right" }
+    { "row": 3, "col": 1, "color": "green", "direction": "right" }
   ],
   "end": [
-    { "row": 3, "col": 5, "color": ["green", "green"], "direction": "left" }
+    { "row": 3, "col": 5, "color": "green", "direction": "left" }
   ]
 }
