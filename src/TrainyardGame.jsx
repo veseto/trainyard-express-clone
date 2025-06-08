@@ -12,7 +12,7 @@ const TrainyardGame = () => {
   const [selectedTool, setSelectedTool] = useState({ type: "track", trackType: "straight-horizontal" });
   const [isRunning, setIsRunning] = useState(false);
   const [status, setStatus] = useState("idle");
-  const [currentLevel, setCurrentLevel] = useState("level-9");
+  const [currentLevel, setCurrentLevel] = useState("level-1");
 
   const resetLevel = async (level = currentLevel) => {
     const { grid: loadedGrid, trains: loadedTrains } = await loadLevelFromJson(level);
@@ -47,13 +47,17 @@ const TrainyardGame = () => {
       }
 
       let nextTrain = null;
+
       moveTrain({
         train,
         grid,
-        setTrain: t => {
-          nextTrain = t;
+        setGrid,
+        setTrain: (updatedTrain) => {
+          nextTrain = updatedTrain;
         }
       });
+
+
 
       if (nextTrain?.hasFailed) anyFailed = true;
       if (!nextTrain?.hasArrived && !nextTrain?.hasFailed) allArrived = false;
@@ -144,35 +148,70 @@ const TrainyardGame = () => {
     setStatus("running");
   };
 
-  const handleCellClick = (row, col) => {
-    if (isRunning) return;
+  const handleCellClick = (row, col, event) => {
+  if (isRunning) return;
 
-    const cell = grid[row][col];
-    if (cell?.type === "start" || cell?.type === "end" || cell?.type === "boulder") return;
+  const cell = grid[row][col];
+  if (cell?.type === "start" || cell?.type === "end" || cell?.type === "boulder") return;
 
-    const newGrid = [...grid];
-    const current = newGrid[row][col];
+  const newGrid = [...grid];
+  const current = newGrid[row][col];
 
-    if (current?.type === "track") {
-      const rotationMap = {
-        "straight-horizontal": "straight-vertical",
-        "straight-vertical": "curve-se",
-        "curve-se": "curve-sw",
-        "curve-sw": "curve-nw",
-        "curve-nw": "curve-ne",
-        "curve-ne": "intersection",
-        "intersection": "senw",
-        "senw": "swne",
-        "swne": "straight-horizontal"
-      };
-      const nextType = rotationMap[current.trackType] || "straight-horizontal";
-      newGrid[row][col] = { ...current, trackType: nextType };
+  const trackCycle = [
+    "ho",
+    "ve",
+    "se",
+    "sw",
+    "nw",
+    "ne",
+    "in",
+    "senw",
+    "swne",
+
+    "se+ne",
+    "sw+se",
+    "sw+nw",
+    "nw+ne",
+    "ho+ne",
+    "ho+nw",
+    "ho+se",
+    "ho+sw",
+    "ve+ne",
+    "ve+nw",
+    "ve+se",
+    "ve+sw"
+  ];
+
+  if (current?.type === "track") {
+    if (event.shiftKey) {
+      // Toggle mainIsFirst for dual-path tracks only
+      if (current.trackType.includes("+")) {
+        newGrid[row][col] = {
+          ...current,
+          mainIsFirst: !current.mainIsFirst
+        };
+      }
     } else {
-      newGrid[row][col] = selectedTool;
+      // Cycle to next trackType normally
+      const currentIndex = trackCycle.indexOf(current.trackType);
+      const nextType = trackCycle[(currentIndex + 1) % trackCycle.length];
+      newGrid[row][col] = { ...current, trackType: nextType };
+      // Reset mainIsFirst to true when switching track type
+      if (nextType.includes("+")) {
+        newGrid[row][col].mainIsFirst = true;
+      } else {
+        delete newGrid[row][col].mainIsFirst;
+      }
     }
+  } else {
+    newGrid[row][col] = selectedTool;
+  }
 
-    setGrid(newGrid);
-  };
+  setGrid(newGrid);
+};
+
+
+
 
   return (
     <div className="p-4 space-y-4">

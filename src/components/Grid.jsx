@@ -9,7 +9,7 @@ const Grid = ({ grid, trains, onCellClick }) => {
           <div
             key={`${rowIndex}-${colIndex}`}
             className="w-14 h-14 flex items-center justify-center border border-gray-300 text-base cursor-pointer"
-            onClick={() => onCellClick(rowIndex, colIndex)}
+            onClick={(e) => onCellClick(rowIndex, colIndex, e)} // pass event here
           >
             {getCellSymbol(cell, trains, rowIndex, colIndex)}
           </div>

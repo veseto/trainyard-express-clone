@@ -1,5 +1,3 @@
-// utils/directions.js
-
 export const oppositeDirection = (dir) => {
   const opposites = {
     up: "down",
@@ -25,52 +23,32 @@ export const getNextPosition = (row, col, direction) => {
   }
 };
 
-export const getOutgoingDirection = (trackType, incoming) => {
-  const map = {
-    "straight-horizontal": {
-      left: "right",
-      right: "left",
+export const getOutgoingDirection = (trackType, incoming, mainIsFirst = true) => {
+  const baseMap = {
+    ho: { left: "right", right: "left" },
+    ve: { up: "down", down: "up" },
+    ne: { up: "right", right: "up" },
+    nw: { up: "left", left: "up" },
+    se: { down: "right", right: "down" },
+    sw: { down: "left", left: "down" },
+    in: {
+      up: "down", down: "up", left: "right", right: "left"
     },
-    "straight-vertical": {
-      up: "down",
-      down: "up",
-    },
-    "curve-ne": {
-      up: "right",
-      right: "up",
-    },
-    "curve-nw": {
-      up: "left",
-      left: "up",
-    },
-    "curve-se": {
-      down: "right",
-      right: "down",
-    },
-    "curve-sw": {
-      down: "left",
-      left: "down",
-    },
-    "intersection": {
-      up: "down",
-      down: "up",
-      left: "right",
-      right: "left",
-    },
-    "senw": {
-      up: "left",
-      down: "right",
-      left: "up",
-      right: "down",
-    },
-    "swne": {
-      up: "right",
-      down: "left",
-      left: "down",
-      right: "up",
-    },
+    senw: { up: "left", down: "right", left: "up", right: "down" },
+    swne: { up: "right", down: "left", left: "down", right: "up" },
   };
 
-  return map[trackType]?.[incoming] || null;
-};
+  if (trackType.includes("+")) {
+    const [first, second] = trackType.split("+");
+    const primary = mainIsFirst ? first : second;
+    const secondary = mainIsFirst ? second : first;
 
+    return (
+      baseMap[primary]?.[incoming] ??
+      baseMap[secondary]?.[incoming] ??
+      null
+    );
+  }
+
+  return baseMap[trackType]?.[incoming] || null;
+};
