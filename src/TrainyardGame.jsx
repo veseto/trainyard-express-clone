@@ -12,7 +12,7 @@ const TrainyardGame = () => {
   const [selectedTool, setSelectedTool] = useState({ type: "track", trackType: "straight-horizontal" });
   const [isRunning, setIsRunning] = useState(false);
   const [status, setStatus] = useState("idle");
-  const [currentLevel, setCurrentLevel] = useState("level-1");
+  const [currentLevel, setCurrentLevel] = useState("level-9");
 
   const resetLevel = async (level = currentLevel) => {
     const loaded = await loadLevelFromJson(level);

@@ -1,9 +1,9 @@
 {
   "start": [
-    { "row": 6, "col": 0, "colors": ["green", "green"], "direction": "up" }
+    { "row": 6, "col": 0, "color": ["green", "green"], "direction": "up" }
   ],
   "end": [
-    { "row": 6, "col": 6, "colors": ["green", "green"], "direction": "up" }
+    { "row": 6, "col": 6, "color": ["green", "green"], "direction": "up" }
   ],
   "boulders": [
     { "row": 0, "col": 6 },
@@ -16,5 +16,5 @@
     { "row": 4, "col": 6 },
     { "row": 5, "col": 2 },
     { "row": 6, "col": 3 }
-  ]
+  ] 
 }

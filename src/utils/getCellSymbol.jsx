@@ -30,7 +30,19 @@ const getCellSymbol = (cell, trains, row, col) => {
   }
 
   if (cell.type === "start") {
-    return <span className={colorClasses[cell.color]}>{directionSymbols[cell.direction]}</span>;
+    const directions = Array.isArray(cell.direction) ? cell.direction : [cell.direction];
+    const colors = Array.isArray(cell.color) ? cell.color : [cell.color];
+
+    return (
+      <span>
+        {directions.map((dir, i) => (
+          <span key={dir + i}>{directionSymbols[dir]}</span>
+        ))}
+        {colors.map((clr, i) => (
+          <span key={clr + i} className={colorClasses[clr] || ""}>&</span>
+        ))}
+      </span>
+    );
   }
 
   if (cell.type === "end") {
