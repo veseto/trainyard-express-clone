@@ -7,7 +7,7 @@ import {
 export const createEmptyGrid = (size = 7) =>
   Array.from({ length: size }, () => Array.from({ length: size }, () => null));
 
-export const moveTrain = ({ train, grid, setTrain, setGrid }) => {
+export const moveTrain = ({ train, grid }) => {
   const { row, col, direction, color } = train;
   const [nextRow, nextCol] = getNextPosition(row, col, direction);
 
@@ -15,16 +15,14 @@ export const moveTrain = ({ train, grid, setTrain, setGrid }) => {
     nextRow < 0 || nextRow >= grid.length ||
     nextCol < 0 || nextCol >= grid[0].length
   ) {
-    setTrain({ ...train, hasFailed: true });
-    return;
+    return { updatedTrain: { ...train, hasFailed: true }, toggleCell: null };
   }
 
   const targetCell = grid[nextRow][nextCol];
   const incoming = oppositeDirection(direction);
 
   if (!targetCell || targetCell.type === "boulder") {
-    setTrain({ ...train, hasFailed: true });
-    return;
+    return { updatedTrain: { ...train, hasFailed: true }, toggleCell: null };
   }
 
   if (targetCell.type === "end") {
@@ -36,11 +34,10 @@ export const moveTrain = ({ train, grid, setTrain, setGrid }) => {
       : [targetCell.color];
 
     if (allowedDirections.includes(incoming) && allowedColors.includes(color)) {
-      setTrain({ ...train, row: nextRow, col: nextCol, hasArrived: true });
+      return { updatedTrain: { ...train, row: nextRow, col: nextCol, hasArrived: true }, toggleCell: null };
     } else {
-      setTrain({ ...train, hasFailed: true });
+      return { updatedTrain: { ...train, hasFailed: true }, toggleCell: null };
     }
-    return;
   }
 
   if (targetCell.type === "track") {
@@ -49,53 +46,44 @@ export const moveTrain = ({ train, grid, setTrain, setGrid }) => {
     if (trackType.includes("+")) {
       const [trackA, trackB] = trackType.split("+");
       const mainIsFirst = targetCell.mainIsFirst !== false;
-      const toggleState = targetCell._toggle !== false;
+      const toggleState = !!targetCell._toggle;
 
       const mainTrack = toggleState ? (mainIsFirst ? trackA : trackB)
+                              : (mainIsFirst ? trackB : trackA);
+
+      const altTrack  = toggleState ? (mainIsFirst ? trackA : trackB)
                                     : (mainIsFirst ? trackB : trackA);
-      const altTrack  = toggleState ? (mainIsFirst ? trackB : trackA)
-                                    : (mainIsFirst ? trackA : trackB);
 
       const mainSupports = getOutgoingDirection(mainTrack, incoming);
       const altSupports  = getOutgoingDirection(altTrack, incoming);
 
       let outgoing = null;
-      let usedTrack = null;
 
       if (mainSupports && altSupports) {
-        // Both paths support entry — choose based on toggle
-        outgoing = getOutgoingDirection(mainTrack, incoming);
-        usedTrack = mainTrack;
+        outgoing = mainSupports;
       } else if (mainSupports) {
         outgoing = mainSupports;
-        usedTrack = mainTrack;
       } else if (altSupports) {
         outgoing = altSupports;
-        usedTrack = altTrack;
       }
 
       if (outgoing) {
-        const newGrid = grid.map(row => row.map(cell => ({ ...cell })));
-
-        // Only toggle if both tracks support the same entrance
-        const shouldToggle = mainSupports && altSupports;
-
-        if (shouldToggle) {
-          newGrid[nextRow][nextCol]._toggle = !toggleState;
-        }
-
-        setGrid(newGrid);
-        setTrain({ ...train, row: nextRow, col: nextCol, direction: outgoing });
-        return;
+        // Instead of toggling grid now, return toggle instruction
+        return {
+          updatedTrain: { ...train, row: nextRow, col: nextCol, direction: outgoing },
+          toggleCell: { row: nextRow, col: nextCol, newToggle: !toggleState }
+        };
       }
     } else {
       const outgoing = getOutgoingDirection(trackType, incoming);
       if (outgoing) {
-        setTrain({ ...train, row: nextRow, col: nextCol, direction: outgoing });
-        return;
+        return {
+          updatedTrain: { ...train, row: nextRow, col: nextCol, direction: outgoing },
+          toggleCell: null
+        };
       }
     }
   }
 
-  setTrain({ ...train, hasFailed: true });
+  return { updatedTrain: { ...train, hasFailed: true }, toggleCell: null };
 };

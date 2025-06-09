@@ -13,7 +13,7 @@ const TrainyardGame = () => {
   const [selectedTool, setSelectedTool] = useState({ type: "track", trackType: "straight-horizontal" });
   const [isRunning, setIsRunning] = useState(false);
   const [status, setStatus] = useState("idle");
-  const [currentLevel, setCurrentLevel] = useState("level-1");
+  const [currentLevel, setCurrentLevel] = useState("level-12");
 
   const resetLevel = async (level = currentLevel) => {
     const { grid: loadedGrid, trains: loadedTrains } = await loadLevelFromJson(level);
@@ -29,110 +29,111 @@ const TrainyardGame = () => {
   }, [currentLevel]);
 
   useEffect(() => {
-    if (!isRunning) return;
-    const interval = setInterval(() => {
-      setTrains(prevTrains => {
-        let anyFailed = false;
-        let allArrived = true;
+  if (!isRunning) return;
 
-        const activeTrains = [];
-        const nextTrains = [];
-        const trainMap = new Map();
+  const interval = setInterval(() => {
+    setTrains(prevTrains => {
+      let anyFailed = false;
+      let allArrived = true;
 
-        // Step 1: move active trains
-        for (const train of prevTrains) {
-          if (train.hasArrived || train.hasFailed || train.isQueued) {
-            nextTrains.push(train);
-            if (train.hasFailed) anyFailed = true;
-            continue;
-          }
+      let updatedGrid = grid.map(row => row.map(cell => ({ ...cell }))); // deep clone grid
 
-          let nextTrain = null;
+      const trainMap = new Map();
 
-          moveTrain({
-            train,
-            grid,
-            setGrid,
-            setTrain: (updatedTrain) => {
-              nextTrain = updatedTrain;
-            }
-          });
+      const nextTrains = [];
 
-          if (nextTrain?.hasFailed) anyFailed = true;
-          if (!nextTrain?.hasArrived && !nextTrain?.hasFailed) allArrived = false;
-
-          const key = `${nextTrain?.row},${nextTrain?.col}`;
-          if (trainMap.has(key)) {
-            const existing = trainMap.get(key);
-            trainMap.set(key, [...existing, nextTrain]);
-          } else {
-            trainMap.set(key, [nextTrain]);
-          }
-
-          activeTrains.push(nextTrain);
+      for (const train of prevTrains) {
+        if (train.hasArrived || train.hasFailed || train.isQueued) {
+          nextTrains.push(train);
+          if (train.hasFailed) anyFailed = true;
+          continue;
         }
 
-        // Step 2: move next train in queue to active (one per start cell)
-        const startsActivated = new Set();
-        const finalTrains = [];
+        const { updatedTrain, toggleCell } = moveTrain({ train, grid: updatedGrid });
 
-        for (const train of nextTrains) {
-          if (train.isQueued && !train.hasArrived && !train.hasFailed) {
-            const key = `${train.row},${train.col}`;
-            if (!startsActivated.has(key)) {
-              finalTrains.push({ ...train, isQueued: false });
-              startsActivated.add(key);
-            } else {
-              finalTrains.push(train);
-            }
+        if (toggleCell) {
+          const { row, col, newToggle } = toggleCell;
+          updatedGrid[row][col]._toggle = newToggle;
+        }
+
+        if (updatedTrain.hasFailed) anyFailed = true;
+        if (!updatedTrain.hasArrived && !updatedTrain.hasFailed) allArrived = false;
+
+        const key = `${updatedTrain.row},${updatedTrain.col}`;
+        if (trainMap.has(key)) {
+          const existing = trainMap.get(key);
+          trainMap.set(key, [...existing, updatedTrain]);
+        } else {
+          trainMap.set(key, [updatedTrain]);
+        }
+
+        nextTrains.push(updatedTrain);
+      }
+
+      // Step 2: move next train in queue to active (one per start cell)
+      const startsActivated = new Set();
+      const finalTrains = [];
+
+      for (const train of nextTrains) {
+        if (train.isQueued && !train.hasArrived && !train.hasFailed) {
+          const key = `${train.row},${train.col}`;
+          if (!startsActivated.has(key)) {
+            finalTrains.push({ ...train, isQueued: false });
+            startsActivated.add(key);
           } else {
             finalTrains.push(train);
           }
+        } else {
+          finalTrains.push(train);
         }
+      }
 
-        finalTrains.push(...activeTrains);
-
-        // Handle color mixing at intersections
-        for (const [key, trainsAtCell] of trainMap.entries()) {
-          if (trainsAtCell.length > 1) {
-            const cell = grid[trainsAtCell[0].row][trainsAtCell[0].col];
-            if (cell?.type === "track" && cell.trackType === "intersection") {
-              const colorSet = new Set(trainsAtCell.map(t => t.color));
-              let newColor = "brown";
-              if (colorSet.size === 1) {
-                newColor = trainsAtCell[0].color;
-              } else if (colorSet.has("red") && colorSet.has("blue") && colorSet.size === 2) {
-                newColor = "purple";
-              } else if (colorSet.has("red") && colorSet.has("yellow") && colorSet.size === 2) {
-                newColor = "orange";
-              } else if (colorSet.has("yellow") && colorSet.has("blue") && colorSet.size === 2) {
-                newColor = "green";
-              }
-              trainMap.set(key, trainsAtCell.map(t => ({ ...t, color: newColor })));
+      // Handle color mixing at intersections
+      for (const [key, trainsAtCell] of trainMap.entries()) {
+        if (trainsAtCell.length > 1) {
+          const [r, c] = key.split(",").map(Number);
+          const cell = updatedGrid[r][c];
+          if (cell?.type === "track" && cell.trackType === "intersection") {
+            const colorSet = new Set(trainsAtCell.map(t => t.color));
+            let newColor = "brown";
+            if (colorSet.size === 1) {
+              newColor = trainsAtCell[0].color;
+            } else if (colorSet.has("red") && colorSet.has("blue") && colorSet.size === 2) {
+              newColor = "purple";
+            } else if (colorSet.has("red") && colorSet.has("yellow") && colorSet.size === 2) {
+              newColor = "orange";
+            } else if (colorSet.has("yellow") && colorSet.has("blue") && colorSet.size === 2) {
+              newColor = "green";
             }
+            trainMap.set(key, trainsAtCell.map(t => ({ ...t, color: newColor })));
           }
         }
+      }
 
-        // Flatten updated trains
-        const flattened = [];
-        for (const trainsAtCell of trainMap.values()) {
-          flattened.push(...trainsAtCell);
-        }
-        flattened.push(...finalTrains.filter(t => !new Set(flattened.map(ft => ft.id)).has(t.id)));
+      // Flatten updated trains
+      const flattened = [];
+      for (const trainsAtCell of trainMap.values()) {
+        flattened.push(...trainsAtCell);
+      }
+      flattened.push(...finalTrains.filter(t => !new Set(flattened.map(ft => ft.id)).has(t.id)));
 
-        if (anyFailed) {
-          setIsRunning(false);
-          setStatus("fail");
-        } else if (allArrived) {
-          setIsRunning(false);
-          setStatus("success");
-        }
+      setGrid(updatedGrid);
 
-        return flattened;
-      });
-    }, 500);
-    return () => clearInterval(interval);
-  }, [isRunning, grid]);
+      if (anyFailed) {
+        setIsRunning(false);
+        setStatus("fail");
+      } else if (allArrived) {
+        setIsRunning(false);
+        setStatus("success");
+      }
+
+      return flattened;
+    });
+  }, 500);
+
+  return () => clearInterval(interval);
+}, [isRunning, grid]);
+
 
   const handleRun = () => {
     if (initialTrainsRef.current.length === 0) return;
@@ -181,9 +182,11 @@ const TrainyardGame = () => {
         if (current.trackType.includes("+")) {
           newGrid[row][col] = {
             ...current,
-            mainIsFirst: !current.mainIsFirst
+            mainIsFirst: !current.mainIsFirst,
+            _toggle: current._toggle ?? true, // ✅ preserve existing toggle or initialize
           };
         }
+
       } else {
         // Cycle to next trackType normally
         const currentIndex = trackCycle.indexOf(current.trackType);
