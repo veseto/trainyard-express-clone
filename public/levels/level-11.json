@@ -1,0 +1,9 @@
+{
+  "start": [
+    { "row": 4, "col": 3, "color": ["orange", "green"], "direction": "down" }
+  ],
+  "end": [
+    { "row": 1, "col": 3, "color": "orange", "direction": "down" },
+    { "row": 3, "col": 3, "color": "green", "direction": "up" }
+  ]
+}

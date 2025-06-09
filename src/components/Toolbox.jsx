@@ -1,8 +1,10 @@
 // src/components/Toolbox.jsx
 import React from "react";
 
+import levelIndex from "../levels/levelIndex";
+
 const Toolbox = ({ handleRun, loadLevel, setIsRunning, onLevelChange }) => {
-  const levels = ["level-1", "level-2", "level-3", "level-4", "level-5", "level-6", "level-7", "level-8", "level-9", "level-10"];
+  const levelNames = Object.keys(levelIndex);
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -29,7 +31,7 @@ const Toolbox = ({ handleRun, loadLevel, setIsRunning, onLevelChange }) => {
           onLevelChange(e.target.value);
         }}
       >
-        {levels.map((level) => (
+        {levelNames.map((level) => (
           <option key={level} value={level}>
             {level}
           </option>
@@ -38,5 +40,6 @@ const Toolbox = ({ handleRun, loadLevel, setIsRunning, onLevelChange }) => {
     </div>
   );
 };
+
 
 export default Toolbox;
