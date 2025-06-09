@@ -9,11 +9,11 @@ const Toolbox = ({ handleRun, loadLevel, setIsRunning, onLevelChange }) => {
   return (
     <div className="flex flex-wrap gap-2">
       <button
-        className="px-4 py-2 bg-purple-500 text-white rounded"
-        onClick={handleRun}
-      >
-        Run
-      </button>
+  className="px-4 py-2 bg-purple-500 text-white rounded"
+  onClick={handleRun}
+>
+  Run
+</button>
       <button
         className="px-4 py-2 bg-gray-700 text-white rounded"
         onClick={() => {
