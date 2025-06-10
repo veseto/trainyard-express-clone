@@ -46,7 +46,7 @@ const TrainyardGame = () => {
     if (!isRunning) return;
     console.log(grid);
     const interval = setInterval(() => {
-  setTrains((prevTrains) => {
+    setTrains((prevTrains) => {
     let anyFailed = false;
     // We'll determine allArrived *after* merging trains
     // so start assuming false, set true later if conditions met
