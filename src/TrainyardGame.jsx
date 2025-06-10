@@ -86,48 +86,62 @@ const TrainyardGame = () => {
     }
 
     // MERGE TRAINS entering same cell with same outgoingDirection on complex tracks
-    const mergedTrains = [];
+const mergedTrains = [];
 
-    for (const [pos, trainsAtPos] of trainMap.entries()) {
-      if (trainsAtPos.length === 1) {
-        mergedTrains.push(trainsAtPos[0]);
-        continue;
-      }
+for (const [pos, trainsAtPos] of trainMap.entries()) {
+  const [rowStr, colStr] = pos.split(",");
+  const row = parseInt(rowStr, 10);
+  const col = parseInt(colStr, 10);
+  const cell = updatedGrid[row][col];
 
-      const [rowStr, colStr] = pos.split(",");
-      const row = parseInt(rowStr, 10);
-      const col = parseInt(colStr, 10);
-      const cell = updatedGrid[row][col];
+  if (cell?.type === "track" && cell.trackType.includes("+")) {
+    // Existing merge logic for complex tracks
+    const groups = new Map();
 
-      if (cell?.type === "track" && cell.trackType.includes("+")) {
-        const groups = new Map();
+    for (const t of trainsAtPos) {
+      const dir = t.outgoingDirection || "unknown";
+      if (!groups.has(dir)) groups.set(dir, []);
+      groups.get(dir).push(t);
+    }
 
-        for (const t of trainsAtPos) {
-          const dir = t.outgoingDirection || "unknown";
-          if (!groups.has(dir)) groups.set(dir, []);
-          groups.get(dir).push(t);
-        }
-
-        for (const [dir, groupTrains] of groups.entries()) {
-          if (groupTrains.length === 1) {
-            mergedTrains.push(groupTrains[0]);
-          } else {
-            // Merge trains with same outgoingDirection
-            const mixedColor = groupTrains.reduce((acc, t) => mixColors(acc, t.color), groupTrains[0].color);
-            const baseTrain = groupTrains[0];
-
-            mergedTrains.push({
-              ...baseTrain,
-              color: mixedColor,
-              hasArrived: false,
-              hasFailed: false,
-            });
-          }
-        }
+    for (const [dir, groupTrains] of groups.entries()) {
+      if (groupTrains.length === 1) {
+        mergedTrains.push(groupTrains[0]);
       } else {
-        mergedTrains.push(...trainsAtPos);
+        // Merge trains with same outgoingDirection on complex tracks
+        const mixedColor = groupTrains.reduce((acc, t) => mixColors(acc, t.color), groupTrains[0].color);
+        const baseTrain = groupTrains[0];
+
+        mergedTrains.push({
+          ...baseTrain,
+          color: mixedColor,
+          hasArrived: false,
+          hasFailed: false,
+        });
       }
     }
+  } else if (
+    cell?.type === "track" &&
+    ["in", "ve", "ho", "ne", "nw", "se", "sw"].includes(cell.trackType) &&
+    trainsAtPos.length > 1
+  ) {
+    // New logic for simple tracks with multiple trains crossing
+    // Mix colors of all trains, but do NOT merge them into one train
+
+    const mixedColor = trainsAtPos.reduce((acc, t) => mixColors(acc, t.color), trainsAtPos[0].color);
+
+    for (const t of trainsAtPos) {
+      mergedTrains.push({
+        ...t,
+        color: mixedColor,
+      });
+    }
+  } else {
+    // Default: no merge, just add all trains as is
+    mergedTrains.push(...trainsAtPos);
+  }
+}
+
 
     // Validate arrivals at end cells
     for (const [key, arrivedTrains] of arrivedAtEnds.entries()) {
