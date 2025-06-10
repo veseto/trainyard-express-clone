@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import Grid from "./components/Grid";
 import Toolbox from "./components/Toolbox";
-import { createEmptyGrid, moveTrain } from "./utils/utils";
+import { createEmptyGrid, moveTrain, mergeTrains } from "./utils/utils";
 import { loadLevelFromJson } from "./levels/levelLoader";
 import { mixColors } from "./utils/mixColors";
 import levelIndex from "./levels/levelIndex";
+import expectedPaths from './levels/expectedPaths.js';
 const levelKeys = Object.keys(levelIndex);
 const maxLevelNum = levelKeys
   .map((key) => {
@@ -43,7 +44,7 @@ const TrainyardGame = () => {
 
   useEffect(() => {
     if (!isRunning) return;
-
+    console.log(grid);
     const interval = setInterval(() => {
   setTrains((prevTrains) => {
     let anyFailed = false;
@@ -85,70 +86,25 @@ const TrainyardGame = () => {
 
       if (updatedTrain.hasFailed) anyFailed = true;
 
-      const key = `${updatedTrain.row},${updatedTrain.col}`;
-      if (trainMap.has(key)) {
-        trainMap.get(key).push(updatedTrain);
-      } else {
-        trainMap.set(key, [updatedTrain]);
+      if (!updatedTrain.isQueued) {
+        const key = `${updatedTrain.row},${updatedTrain.col}`;
+        if (trainMap.has(key)) {
+          trainMap.get(key).push(updatedTrain);
+        } else {
+          trainMap.set(key, [updatedTrain]);
+        }
       }
+
 
       nextTrains.push(updatedTrain);
     }
 
-    // MERGE TRAINS entering same cell with same outgoingDirection on complex tracks
-const mergedTrains = [];
+const mergedTrains = mergeTrains({ trains: nextTrains, grid: updatedGrid });
 
-for (const [pos, trainsAtPos] of trainMap.entries()) {
-  const [rowStr, colStr] = pos.split(",");
-  const row = parseInt(rowStr, 10);
-  const col = parseInt(colStr, 10);
-  const cell = updatedGrid[row][col];
-
-  if (cell?.type === "track" && cell.trackType.includes("+")) {
-    // Existing merge logic for complex tracks
-    const groups = new Map();
-
-    for (const t of trainsAtPos) {
-      const dir = t.outgoingDirection || "unknown";
-      if (!groups.has(dir)) groups.set(dir, []);
-      groups.get(dir).push(t);
-    }
-
-    for (const [dir, groupTrains] of groups.entries()) {
-      if (groupTrains.length === 1) {
-        mergedTrains.push(groupTrains[0]);
-      } else {
-        // Merge trains with same outgoingDirection on complex tracks
-        const mixedColor = groupTrains.reduce((acc, t) => mixColors(acc, t.color), groupTrains[0].color);
-        const baseTrain = groupTrains[0];
-
-        mergedTrains.push({
-          ...baseTrain,
-          color: mixedColor,
-          hasArrived: false,
-          hasFailed: false,
-        });
-      }
-    }
-  } else if (
-    cell?.type === "track" &&
-    ["in", "ve", "ho", "ne", "nw", "se", "sw"].includes(cell.trackType) &&
-    trainsAtPos.length > 1
-  ) {
-    // New logic for simple tracks with multiple trains crossing
-    // Mix colors of all trains, but do NOT merge them into one train
-
-    const mixedColor = trainsAtPos.reduce((acc, t) => mixColors(acc, t.color), trainsAtPos[0].color);
-
-    for (const t of trainsAtPos) {
-      mergedTrains.push({
-        ...t,
-        color: mixedColor,
-      });
-    }
-  } else {
-    // Default: no merge, just add all trains as is
-    mergedTrains.push(...trainsAtPos);
+// Add all queued trains back in
+for (const train of nextTrains) {
+  if (train.isQueued) {
+    mergedTrains.push(train);
   }
 }
 
@@ -204,6 +160,7 @@ for (const [pos, trainsAtPos] of trainMap.entries()) {
       setStatus("success");
       setLevelFailed(false);
     }
+    setGrid(updatedGrid);
 
     return finalTrains;
   });
@@ -269,9 +226,9 @@ for (const [pos, trainsAtPos] of trainMap.entries()) {
       "ho+nw",
       "ho+se",
       "ho+sw",
-      "ve+ne",
+      "ne+ve",
       "nw+ve",
-      "ve+se",
+      "se+ve",
       "sw+ve",
     ];
 
@@ -301,6 +258,159 @@ for (const [pos, trainsAtPos] of trainMap.entries()) {
     setGrid(newGrid);
   };
 
+  const handleTestAllLevels = async () => {
+  setIsRunning(false);
+  setStatus("testing...");
+  setLevelFailed(false);
+
+  const results = [];
+
+  for (const levelKey of Object.keys(levelIndex)) {
+    const { grid: loadedGrid, trains: loadedTrains } = await loadLevelFromJson(levelKey);
+
+    // Patch expected tracks into the grid for testing
+    addExpectedTracksToGrid(loadedGrid, levelKey);
+
+    // Deep copy to avoid mutations affecting original level data
+    let trains = loadedTrains.map(t => ({ ...t }));
+    let gridCopy = loadedGrid.map(row => row.map(cell => (cell ? { ...cell } : null)));
+
+
+    let step = 0;
+    const maxSteps = 1000;
+    let levelStatus = "running";
+
+    while (step < maxSteps && levelStatus === "running") {
+      step++;
+      let anyFailed = false;
+      let allArrived = false;
+      const arrivedAtEnds = new Map();
+      const trainMap = new Map();
+      const updatedGrid = gridCopy.map(row => row.map(cell => (cell ? { ...cell } : null)));
+      const nextTrains = [];
+
+      for (const train of trains) {
+        if (train.hasArrived || train.hasFailed || train.isQueued) {
+          nextTrains.push(train);
+          if (train.hasFailed) anyFailed = true;
+          continue;
+        }
+
+        const { updatedTrain, toggleCell, outgoingDirection } = moveTrain({ train, grid: updatedGrid });
+
+        if (toggleCell) {
+          const { row, col, newToggle } = toggleCell;
+          updatedGrid[row][col]._toggle = newToggle;
+        }
+
+        updatedTrain.outgoingDirection = outgoingDirection;
+
+        if (updatedTrain.hasArrived) {
+          const key = `${updatedTrain.row},${updatedTrain.col}`;
+          if (!arrivedAtEnds.has(key)) {
+            arrivedAtEnds.set(key, []);
+          }
+          arrivedAtEnds.get(key).push(updatedTrain);
+        }
+
+        if (updatedTrain.hasFailed) anyFailed = true;
+
+        if (!updatedTrain.isQueued) {
+          const key = `${updatedTrain.row},${updatedTrain.col}`;
+          if (!trainMap.has(key)) trainMap.set(key, []);
+          trainMap.get(key).push(updatedTrain);
+        }
+
+        nextTrains.push(updatedTrain);
+      }
+
+      // Merge logic (same as main loop)
+      const mergedTrains = mergeTrains({ trains: nextTrains, grid: updatedGrid });
+
+
+      // Add queued trains
+      for (const t of nextTrains) {
+        if (t.isQueued) mergedTrains.push(t);
+      }
+
+      // Validate arrivals
+      for (const [key, arrivedTrains] of arrivedAtEnds.entries()) {
+        const [rowStr, colStr] = key.split(",");
+        const row = parseInt(rowStr, 10);
+        const col = parseInt(colStr, 10);
+        const endCell = updatedGrid[row][col];
+
+        if (endCell?.type === "end") {
+          const expected = Array.isArray(endCell.color) ? endCell.color : [endCell.color];
+          const actual = arrivedTrains.map(t => t.color);
+          if (!arraysMatchMultiset(expected, actual)) {
+            arrivedTrains.forEach(t => t.hasFailed = true);
+            anyFailed = true;
+          }
+        }
+      }
+
+      // Move queued trains
+      const startsActivated = new Set();
+      const finalTrains = [];
+
+      for (const t of mergedTrains) {
+        if (t.isQueued && !t.hasFailed && !t.hasArrived) {
+          const key = `${t.row},${t.col}`;
+          if (!startsActivated.has(key)) {
+            finalTrains.push({ ...t, isQueued: false });
+            startsActivated.add(key);
+          } else {
+            finalTrains.push(t);
+          }
+        } else {
+          finalTrains.push(t);
+        }
+      }
+
+      trains = finalTrains;
+      gridCopy = updatedGrid;
+
+      allArrived = trains.length > 0 && trains.every(t => t.hasArrived);
+
+      if (anyFailed) {
+        levelStatus = "failed";
+      } else if (allArrived) {
+        levelStatus = "success";
+      }
+    }
+
+    if (levelStatus === "running") {
+      levelStatus = "timeout";
+    }
+
+    results.push({ level: levelKey, status: levelStatus });
+  }
+
+  console.table(results);
+  setStatus("tested");
+};
+
+
+function addExpectedTracksToGrid(grid, levelKey) {
+  const tracks = expectedPaths[levelKey];
+  if (!tracks) return; // no expected tracks for this level
+
+  for (const { row, col, trackType } of tracks) {
+    // If the cell exists, patch its trackType, else create new track cell
+    if (grid[row] && grid[row][col]) {
+      grid[row][col].type = "track";
+      grid[row][col].trackType = trackType;
+    } else if (grid[row]) {
+      grid[row][col] = { type: "track", trackType };
+    } else {
+      // If row does not exist (shouldn't happen), optionally create
+      // but generally your grid shape is fixed
+    }
+  }
+}
+
+
   return (
     <div className="p-4 space-y-4">
       <Toolbox
@@ -309,6 +419,7 @@ for (const [pos, trainsAtPos] of trainMap.entries()) {
         loadLevel={resetLevel}
         setIsRunning={setIsRunning}
         onLevelChange={setCurrentLevel}
+        handleTestAllLevels={handleTestAllLevels} // NEW
       />
       <Grid grid={grid} onCellClick={handleCellClick} trains={trains} />
       <div className="text-lg font-bold">Status: {status}</div>
