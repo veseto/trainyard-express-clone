@@ -1,0 +1,17 @@
+{
+  "start": [
+    { "row": 0, "col": 0, "color": "purple", "direction": "down" },
+    { "row": 4, "col": 6, "color": "purple", "direction": "left" }
+  ],
+  "end": [
+    { "row": 5, "col": 6, "color": "purple", "direction": "down" }
+  ], 
+  "boulders": [
+    { "row": 0, "col": 5 },
+    { "row": 0, "col": 6 },
+    { "row": 1, "col": 6 },
+    { "row": 5, "col": 0 },
+    { "row": 6, "col": 0 },
+    { "row": 6, "col": 1 }
+  ]
+}
