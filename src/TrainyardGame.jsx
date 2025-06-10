@@ -3,6 +3,7 @@ import Grid from "./components/Grid";
 import Toolbox from "./components/Toolbox";
 import { createEmptyGrid, moveTrain } from "./utils/utils";
 import { loadLevelFromJson } from "./levels/levelLoader";
+        import { mixColors } from "./utils/mixColors";
 
 const GRID_SIZE = 7;
 
@@ -90,24 +91,32 @@ const TrainyardGame = () => {
 
       // Handle color mixing at intersections
       for (const [key, trainsAtCell] of trainMap.entries()) {
-        if (trainsAtCell.length > 1) {
-          const [r, c] = key.split(",").map(Number);
-          const cell = updatedGrid[r][c];
-          if (cell?.type === "track" && cell.trackType === "intersection") {
-            const colorSet = new Set(trainsAtCell.map(t => t.color));
-            let newColor = "brown";
-            if (colorSet.size === 1) {
-              newColor = trainsAtCell[0].color;
-            } else if (colorSet.has("red") && colorSet.has("blue") && colorSet.size === 2) {
-              newColor = "purple";
-            } else if (colorSet.has("red") && colorSet.has("yellow") && colorSet.size === 2) {
-              newColor = "orange";
-            } else if (colorSet.has("yellow") && colorSet.has("blue") && colorSet.size === 2) {
-              newColor = "green";
-            }
-            trainMap.set(key, trainsAtCell.map(t => ({ ...t, color: newColor })));
-          }
-        }
+
+// ...
+
+if (trainsAtCell.length > 1) {
+  // ...
+  const [rowStr, colStr] = key.split(",");
+const row = parseInt(rowStr, 10);
+const col = parseInt(colStr, 10);
+const cell = updatedGrid[row][col];  // or grid[row][col] depending on your context
+
+  if (cell?.type === "track" && cell.trackType === "in") {
+    const colors = trainsAtCell.map(t => t.color);
+    let newColor = colors[0];
+    if (new Set(colors).size > 1) {
+      newColor = colors.reduce((acc, c) => mixColors(acc, c));
+    }
+    trainMap.set(key, trainsAtCell.map(t => ({ ...t, color: newColor }))); //for keep both trains
+//     trainMap.set(key, [{
+//   ...trainsAtCell[0],
+//   color: newColor,
+//   // you might want to handle direction or other props here
+// }]);
+
+  }
+}
+
       }
 
       // Flatten updated trains

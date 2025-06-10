@@ -34,7 +34,10 @@ export const moveTrain = ({ train, grid }) => {
       : [targetCell.color];
 
     if (allowedDirections.includes(incoming) && allowedColors.includes(color)) {
-      return { updatedTrain: { ...train, row: nextRow, col: nextCol, hasArrived: true }, toggleCell: null };
+      return {
+        updatedTrain: { ...train, row: nextRow, col: nextCol, hasArrived: true },
+        toggleCell: null
+      };
     } else {
       return { updatedTrain: { ...train, hasFailed: true }, toggleCell: null };
     }
@@ -48,32 +51,49 @@ export const moveTrain = ({ train, grid }) => {
       const mainIsFirst = targetCell.mainIsFirst !== false;
       const toggleState = !!targetCell._toggle;
 
-      const mainTrack = toggleState ? (mainIsFirst ? trackA : trackB)
-                              : (mainIsFirst ? trackB : trackA);
+      const mainTrack = toggleState
+        ? (mainIsFirst ? trackA : trackB)
+        : (mainIsFirst ? trackB : trackA);
 
-      const altTrack  = toggleState ? (mainIsFirst ? trackA : trackB)
-                                    : (mainIsFirst ? trackB : trackA);
+      const altTrack = toggleState
+        ? (mainIsFirst ? trackB : trackA)
+        : (mainIsFirst ? trackA : trackB);
 
       const mainSupports = getOutgoingDirection(mainTrack, incoming);
-      const altSupports  = getOutgoingDirection(altTrack, incoming);
+      const altSupports = getOutgoingDirection(altTrack, incoming);
 
-      let outgoing = null;
-
-      if (mainSupports && altSupports) {
-        outgoing = mainSupports;
-      } else if (mainSupports) {
-        outgoing = mainSupports;
-      } else if (altSupports) {
-        outgoing = altSupports;
-      }
-
-      if (outgoing) {
-        // Instead of toggling grid now, return toggle instruction
+      if (mainSupports) {
         return {
-          updatedTrain: { ...train, row: nextRow, col: nextCol, direction: outgoing },
-          toggleCell: { row: nextRow, col: nextCol, newToggle: !toggleState }
+          updatedTrain: {
+            ...train,
+            row: nextRow,
+            col: nextCol,
+            direction: mainSupports
+          },
+          toggleCell: {
+            row: nextRow,
+            col: nextCol,
+            newToggle: !toggleState
+          }
         };
       }
+
+      if (altSupports) {
+        return {
+          updatedTrain: {
+            ...train,
+            row: nextRow,
+            col: nextCol,
+            direction: altSupports
+          },
+          toggleCell: {
+            row: nextRow,
+            col: nextCol,
+            newToggle: !toggleState
+          }
+        };
+      }
+
     } else {
       const outgoing = getOutgoingDirection(trackType, incoming);
       if (outgoing) {
