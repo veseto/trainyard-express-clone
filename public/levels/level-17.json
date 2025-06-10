@@ -1,0 +1,22 @@
+{
+  "start": [
+    { "row": 2, "col": 0, "color": "yellow", "direction": "right" },
+    { "row": 4, "col": 0, "color": "yellow", "direction": "right" },
+    { "row": 6, "col": 2, "color": "yellow", "direction": "up" },
+    { "row": 6, "col": 4, "color": "yellow", "direction": "up" }
+  ],
+  "end": [
+    { "row": 0, "col": 6, "color": "yellow", "direction": "down" }
+  ], 
+  "boulders": [
+    { "row": 0, "col": 0 },
+    { "row": 1, "col": 0 },
+    { "row": 3, "col": 0 },
+    { "row": 5, "col": 0 },
+    { "row": 6, "col": 0 },
+    { "row": 6, "col": 1 },
+    { "row": 6, "col": 3 },
+    { "row": 6, "col": 5 },
+    { "row": 6, "col": 6 }
+  ]
+}

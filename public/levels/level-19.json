@@ -1,0 +1,13 @@
+{
+  "start": [
+    { "row": 3, "col": 2, "color": ["blue", "blue"], "direction": "left" },
+    { "row": 3, "col": 4, "color": ["yellow", "yellow"], "direction": "right" }
+  ],
+  "end": [
+    { "row": 0, "col": 3, "color": "green", "direction": "down" },
+    { "row": 6, "col": 3, "color": "green", "direction": "up" }
+  ],
+  "boulders": [
+    { "row": 3, "col": 3 }
+  ]
+}

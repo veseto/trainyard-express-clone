@@ -4,6 +4,16 @@ import Toolbox from "./components/Toolbox";
 import { createEmptyGrid, moveTrain } from "./utils/utils";
 import { loadLevelFromJson } from "./levels/levelLoader";
 import { mixColors } from "./utils/mixColors";
+import levelIndex from "./levels/levelIndex";
+const levelKeys = Object.keys(levelIndex);
+const maxLevelNum = levelKeys
+  .map((key) => {
+    const match = key.match(/level-(\d+)/);
+    return match ? parseInt(match[1], 10) : -Infinity;
+  })
+  .reduce((max, num) => (num > max ? num : max), -Infinity);
+
+const lastLevelKey = `level-${maxLevelNum}`;
 
 const GRID_SIZE = 7;
 
@@ -14,7 +24,7 @@ const TrainyardGame = () => {
   const [selectedTool, setSelectedTool] = useState({ type: "track", trackType: "straight-horizontal" });
   const [isRunning, setIsRunning] = useState(false);
   const [status, setStatus] = useState("idle");
-  const [currentLevel, setCurrentLevel] = useState("level-14");
+  const [currentLevel, setCurrentLevel] = useState(lastLevelKey);
   const [levelFailed, setLevelFailed] = React.useState(false);
 
   const resetLevel = async (level = currentLevel) => {
@@ -260,9 +270,9 @@ for (const [pos, trainsAtPos] of trainMap.entries()) {
       "ho+se",
       "ho+sw",
       "ve+ne",
-      "ve+nw",
+      "nw+ve",
       "ve+se",
-      "ve+sw",
+      "sw+ve",
     ];
 
     if (current?.type === "track") {
