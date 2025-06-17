@@ -267,6 +267,7 @@ for (const [key, arrivedTrains] of arrivedAtEnds.entries()) {
 
   const results = [];
 
+  // for (const levelKey of ["level-17"]) {
   for (const levelKey of Object.keys(levelIndex)) {
     const { grid: loadedGrid, trains: loadedTrains } = await loadLevelFromJson(levelKey);
     addExpectedTracksToGrid(loadedGrid, levelKey);
@@ -396,7 +397,6 @@ for (const [key, arrivedTrains] of arrivedAtEnds.entries()) {
 
       trains = mergedTrains;
       allArrived = mergedTrains.length > 0 && mergedTrains.every(t => t.hasArrived);
-
       if (anyFailed) {
         levelStatus = "failed";
       } else if (allArrived) {
