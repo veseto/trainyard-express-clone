@@ -267,7 +267,7 @@ for (const [key, arrivedTrains] of arrivedAtEnds.entries()) {
 
   const results = [];
 
-  // for (const levelKey of ["level-17"]) {
+  // for (const levelKey of ["level-20"]) {
   for (const levelKey of Object.keys(levelIndex)) {
     const { grid: loadedGrid, trains: loadedTrains } = await loadLevelFromJson(levelKey);
     addExpectedTracksToGrid(loadedGrid, levelKey);
@@ -320,7 +320,7 @@ for (const [key, arrivedTrains] of arrivedAtEnds.entries()) {
           const key = `${toggleCell.row},${toggleCell.col}`;
           toggleUpdates.set(key, toggleCell.newToggle);
         }
-
+        console.log(updatedTrain);
         updatedTrain.outgoingDirection = outgoingDirection;
 
         if (updatedTrain.hasArrived) {
