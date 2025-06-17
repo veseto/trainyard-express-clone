@@ -212,9 +212,9 @@ const expectedPaths = {
   { row: 2, col: 3, trackType: "se" },
   { row: 2, col: 4, trackType: "ho" },
   { row: 2, col: 5, trackType: "ho" },
-  { row: 2, col: 6, trackType: "sw+ve", mainIsFirst: true },
+  { row: 2, col: 6, trackType: "sw+ve", mainIsFirst: false },
 
-  { row: 4, col: 0, trackType: "ne+ve", mainIsFirst: true },
+  { row: 4, col: 0, trackType: "ne+ve", mainIsFirst: false },
   { row: 4, col: 1, trackType: "ho" },
   { row: 4, col: 2, trackType: "ho" },
   { row: 4, col: 3, trackType: "nw" },

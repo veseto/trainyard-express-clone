@@ -55,6 +55,7 @@ setTrains((prevTrains) => {
   const trainMap = new Map();
   const arrivedAtEnds = new Map();
   const nextTrains = [];
+  const toggleUpdates = new Map();
 
   // Move all trains
   for (const train of prevTrains) {
@@ -66,8 +67,8 @@ setTrains((prevTrains) => {
 
     const { updatedTrain, toggleCell, outgoingDirection } = moveTrain({ train, grid: updatedGrid });
     if (toggleCell) {
-      const { row, col, newToggle } = toggleCell;
-      updatedGrid[row][col]._toggle = newToggle;
+      const key = `${toggleCell.row},${toggleCell.col}`;
+      toggleUpdates.set(key, toggleCell.newToggle);
     }
 
     updatedTrain.outgoingDirection = outgoingDirection;
@@ -93,7 +94,10 @@ setTrains((prevTrains) => {
 
     nextTrains.push(updatedTrain);
   }
-
+  for (const [key, newToggle] of toggleUpdates.entries()) {
+    const [row, col] = key.split(",").map(Number);
+    updatedGrid[row][col]._toggle = newToggle;
+  }
   // ✅ Step 1: move next train in queue to active (only one per start cell)
   const startsActivated = new Set();
   const activatedTrains = [];
@@ -301,6 +305,7 @@ for (const [key, arrivedTrains] of arrivedAtEnds.entries()) {
       );
 
       const nextTrains = [];
+      const toggleUpdates = new Map();
 
       for (const train of trains) {
         if (train.hasArrived || train.hasFailed || train.isQueued) {
@@ -311,8 +316,8 @@ for (const [key, arrivedTrains] of arrivedAtEnds.entries()) {
 
         const { updatedTrain, toggleCell, outgoingDirection } = moveTrain({ train, grid: updatedGrid });
         if (toggleCell) {
-          const { row, col, newToggle } = toggleCell;
-          updatedGrid[row][col]._toggle = newToggle;
+          const key = `${toggleCell.row},${toggleCell.col}`;
+          toggleUpdates.set(key, toggleCell.newToggle);
         }
 
         updatedTrain.outgoingDirection = outgoingDirection;
@@ -337,6 +342,10 @@ for (const [key, arrivedTrains] of arrivedAtEnds.entries()) {
         }
 
         nextTrains.push(updatedTrain);
+      }
+      for (const [key, newToggle] of toggleUpdates.entries()) {
+        const [row, col] = key.split(",").map(Number);
+        updatedGrid[row][col]._toggle = newToggle;
       }
 
       const startsActivated = new Set();
