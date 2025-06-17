@@ -118,7 +118,7 @@ export const moveTrain = ({ train, grid }) => {
       }
     }
   }
-
+  
   // Unknown cell type or no valid move = fail
   return { updatedTrain: { ...train, hasFailed: true }, toggleCell: null, outgoingDirection: null };
 };
