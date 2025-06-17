@@ -1,0 +1,13 @@
+{
+  "start": [
+    { "row": 0, "col": 0, "color": "yellow", "direction": "right" },
+    { "row": 0, "col": 6, "color": "blue", "direction": "left" },
+    { "row": 6, "col": 0, "color": "blue", "direction": "right" },
+    { "row": 6, "col": 6, "color": "red", "direction": "left" }
+  ],
+  "end": [
+    { "row": 2, "col": 0, "color": "purple", "direction": "right" },
+    { "row": 4, "col": 0, "color": "purple", "direction": "right" },
+    { "row": 3, "col": 6, "color": "green", "direction": "left" }
+  ]
+}
