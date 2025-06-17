@@ -193,16 +193,21 @@ const expectedPaths = {
   { row: 4, col: 6, trackType: "nw" }
 ],
 "level-11": [
-  { row: 2, col: 3, trackType: "se+ne", mainIsFirst: false, _toggle: true },
+  { row: 2, col: 2, trackType: "se" },
+  { row: 2, col: 3, trackType: "senw" },
   { row: 2, col: 4, trackType: "sw" },
 
+  { row: 3, col: 2, trackType: "ve" },
   { row: 3, col: 4, trackType: "ve" },
 
+  { row: 4, col: 2, trackType: "ve" },
   { row: 4, col: 4, trackType: "ve" },
 
-  { row: 5, col: 3, trackType: "ne" },
+  { row: 5, col: 2, trackType: "ne" },
+  { row: 5, col: 3, trackType: "nw+ne", mainIsFirst: false, _toggle: true },
   { row: 5, col: 4, trackType: "nw" }
 ],
+
 "level-12": [
   { row: 2, col: 3, trackType: "se" },
   { row: 2, col: 4, trackType: "ho" },

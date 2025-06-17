@@ -65,7 +65,6 @@ setTrains((prevTrains) => {
     }
 
     const { updatedTrain, toggleCell, outgoingDirection } = moveTrain({ train, grid: updatedGrid });
-    console.log(updatedTrain);
     if (toggleCell) {
       const { row, col, newToggle } = toggleCell;
       updatedGrid[row][col]._toggle = newToggle;
@@ -122,16 +121,20 @@ setTrains((prevTrains) => {
   }
 
   // Validate arrivals
-  for (const [key, arrivedTrains] of arrivedAtEnds.entries()) {
-    const [rowStr, colStr] = key.split(",");
-    const row = parseInt(rowStr, 10);
-    const col = parseInt(colStr, 10);
-    const endCell = updatedGrid[row][col];
+  // ✅ Move this block AFTER merging and queued train logic
 
-    if (endCell?.type === "end") {
-      const expectedColors = Array.isArray(endCell.color) ? endCell.color : [endCell.color];
-      const arrivedColors = arrivedTrains.map((t) => t.color);
+for (const [key, arrivedTrains] of arrivedAtEnds.entries()) {
+  const [rowStr, colStr] = key.split(",");
+  const row = parseInt(rowStr, 10);
+  const col = parseInt(colStr, 10);
+  const endCell = updatedGrid[row][col];
 
+  if (endCell?.type === "end") {
+    const expectedColors = Array.isArray(endCell.color) ? endCell.color : [endCell.color];
+    const arrivedColors = arrivedTrains.map((t) => t.color);
+
+    // ✅ Only validate if the count of arrived matches expected
+    if (arrivedColors.length === expectedColors.length) {
       if (!arraysMatchMultiset(expectedColors, arrivedColors)) {
         arrivedTrains.forEach((t) => {
           t.hasFailed = true;
@@ -140,6 +143,8 @@ setTrains((prevTrains) => {
       }
     }
   }
+}
+
 
   allArrived = mergedTrains.length > 0 && mergedTrains.every((t) => t.hasArrived);
 
@@ -260,12 +265,18 @@ setTrains((prevTrains) => {
 
   for (const levelKey of Object.keys(levelIndex)) {
     const { grid: loadedGrid, trains: loadedTrains } = await loadLevelFromJson(levelKey);
-    // Patch expected tracks into the grid for testing
     addExpectedTracksToGrid(loadedGrid, levelKey);
-
-    // Deep copy to avoid mutations affecting original level data
     let trains = loadedTrains.map(t => ({ ...t }));
-    let gridCopy = loadedGrid.map(row => row.map(cell => (cell ? { ...cell } : null)));
+    let gridCopy = loadedGrid.map(row =>
+      row.map(cell => {
+        if (!cell) return null;
+        return {
+          ...cell,
+          ...(cell.hasOwnProperty('_toggle') ? { _toggle: cell._toggle } : {}),
+          ...(cell.hasOwnProperty('mainIsFirst') ? { mainIsFirst: cell.mainIsFirst } : {})
+        };
+      })
+    );
 
     let step = 0;
     const maxSteps = 1000;
@@ -277,10 +288,20 @@ setTrains((prevTrains) => {
       let allArrived = false;
       const arrivedAtEnds = new Map();
       const trainMap = new Map();
-      const updatedGrid = gridCopy.map(row => row.map(cell => (cell ? { ...cell } : null)));
+
+      const updatedGrid = gridCopy.map(row =>
+        row.map(cell => {
+          if (!cell) return null;
+          return {
+            ...cell,
+            ...(cell.hasOwnProperty('_toggle') ? { _toggle: cell._toggle } : {}),
+            ...(cell.hasOwnProperty('mainIsFirst') ? { mainIsFirst: cell.mainIsFirst } : {})
+          };
+        })
+      );
+
       const nextTrains = [];
 
-      // Move all trains, collect outgoingDirection for merging
       for (const train of trains) {
         if (train.hasArrived || train.hasFailed || train.isQueued) {
           nextTrains.push(train);
@@ -318,16 +339,30 @@ setTrains((prevTrains) => {
         nextTrains.push(updatedTrain);
       }
 
-      const mergedTrains = mergeTrains({ trains: nextTrains, grid: updatedGrid });
+      const startsActivated = new Set();
+      const activatedTrains = [];
+      const remainingQueuedTrains = [];
 
-      // Add all queued trains back in
       for (const train of nextTrains) {
-        if (train.isQueued) {
-          mergedTrains.push(train);
+        if (train.isQueued && !train.hasArrived && !train.hasFailed) {
+          const key = `${train.row},${train.col}`;
+          if (!startsActivated.has(key)) {
+            activatedTrains.push({ ...train, isQueued: false });
+            startsActivated.add(key);
+          } else {
+            remainingQueuedTrains.push(train);
+          }
+        } else {
+          activatedTrains.push(train);
         }
       }
 
-      // Validate arrivals at end cells
+      const mergedTrains = mergeTrains({ trains: activatedTrains, grid: updatedGrid });
+
+      for (const train of remainingQueuedTrains) {
+        mergedTrains.push(train);
+      }
+
       for (const [key, arrivedTrains] of arrivedAtEnds.entries()) {
         const [rowStr, colStr] = key.split(",");
         const row = parseInt(rowStr, 10);
@@ -338,44 +373,29 @@ setTrains((prevTrains) => {
           const expectedColors = Array.isArray(endCell.color) ? endCell.color : [endCell.color];
           const arrivedColors = arrivedTrains.map((t) => t.color);
 
-          if (!arraysMatchMultiset(expectedColors, arrivedColors)) {
-            arrivedTrains.forEach((t) => {
-              t.hasFailed = true;
-            });
-            anyFailed = true;
+          if (arrivedColors.length === expectedColors.length) {
+            if (!arraysMatchMultiset(expectedColors, arrivedColors)) {
+              arrivedTrains.forEach((t) => {
+                t.hasFailed = true;
+                console.log(t);
+              });
+              anyFailed = true;
+            }
           }
         }
       }
 
-      // Step 2: move next train in queue to active (one per start cell)
-      const startsActivated = new Set();
-      const finalTrains = [];
-
-      for (const train of mergedTrains) {
-        if (train.isQueued && !train.hasArrived && !train.hasFailed) {
-          const key = `${train.row},${train.col}`;
-          if (!startsActivated.has(key)) {
-            finalTrains.push({ ...train, isQueued: false });
-            startsActivated.add(key);
-          } else {
-            finalTrains.push(train);
-          }
-        } else {
-          finalTrains.push(train);
-        }
-      }
-
-      // ✅ CRUCIAL FIX: update the trains reference for the next loop
-      trains = finalTrains;
-
-      // NOW update allArrived after merging and queuing logic
-      allArrived = finalTrains.length > 0 && finalTrains.every(t => t.hasArrived);
+      trains = mergedTrains;
+      allArrived = mergedTrains.length > 0 && mergedTrains.every(t => t.hasArrived);
 
       if (anyFailed) {
         levelStatus = "failed";
       } else if (allArrived) {
         levelStatus = "success";
       }
+
+      // ✅ FIX: carry over toggle/mainIsFirst changes
+      gridCopy = updatedGrid;
     }
 
     if (levelStatus === "running") {
@@ -394,13 +414,14 @@ function addExpectedTracksToGrid(grid, levelKey) {
   const tracks = expectedPaths[levelKey];
   if (!tracks) return; // no expected tracks for this level
 
-  for (const { row, col, trackType } of tracks) {
+  for (const { row, col, trackType, mainIsFirst } of tracks) {
     // If the cell exists, patch its trackType, else create new track cell
     if (grid[row] && grid[row][col]) {
       grid[row][col].type = "track";
       grid[row][col].trackType = trackType;
+      grid[row][col].mainIsFirst = mainIsFirst;
     } else if (grid[row]) {
-      grid[row][col] = { type: "track", trackType };
+      grid[row][col] = { type: "track", trackType, mainIsFirst };
     } else {
       // If row does not exist (shouldn't happen), optionally create
       // but generally your grid shape is fixed
