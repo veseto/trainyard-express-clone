@@ -332,20 +332,22 @@ const expectedPaths = {
 ],
 
   "level-18": [
-    { row: 0, col: 1, trackType: "se" },
-    { row: 0, col: 2, trackType: "sw" },
-    { row: 1, col: 0, trackType: "ve" },
-    { row: 2, col: 0, trackType: "ne" },
-    { row: 2, col: 1, trackType: "ho" },
-    { row: 2, col: 2, trackType: "ho+ne", mainIsFirst: true},    // mainIsFirst true
-    { row: 2, col: 3, trackType: "ho" },
-    { row: 2, col: 4, trackType: "ho" },
-    { row: 2, col: 5, trackType: "ho" },
-    { row: 2, col: 6, trackType: "sw" },
-    { row: 3, col: 6, trackType: "ve" },
-    { row: 4, col: 6, trackType: "ve" },
-    { row: 5, col: 6, trackType: "ve" },
-  ],
+  { row: 0, col: 1, trackType: "se" },
+  { row: 0, col: 2, trackType: "sw" },
+  { row: 1, col: 0, trackType: "ve" },
+  { row: 1, col: 2, trackType: "ve" },
+  { row: 2, col: 0, trackType: "ne" },
+  { row: 2, col: 1, trackType: "ho" },
+  { row: 2, col: 2, trackType: "ho+ne", mainIsFirst: true },
+  { row: 2, col: 3, trackType: "ho" },
+  { row: 2, col: 4, trackType: "ho" },
+  { row: 2, col: 5, trackType: "ho" },
+  { row: 2, col: 6, trackType: "sw" },
+  { row: 3, col: 6, trackType: "ve" },
+  { row: 4, col: 6, trackType: "ve" },
+  { row: 5, col: 6, trackType: "ve" }
+],
+
 
   "level-19": [
     { row: 1, col: 3, trackType: "ve" },
